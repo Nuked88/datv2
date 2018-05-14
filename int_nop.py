@@ -5,7 +5,7 @@ import sys
 import getopt
 import io
 import re
-
+import string
 import random
 import os
 import pymongo
@@ -15,7 +15,8 @@ from pprint import pprint
 from collections import defaultdict
 from math_mean import harmonic_mean, percentage,F
 from itertools import takewhile, repeat, izip_longest
-from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool 
+
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -30,7 +31,7 @@ collectionm = db['DNA']
 inputfile = 0
 outputfile = 0
 maxEnd=0
-deb = 1
+deb = 0
 
 def getNextSequence(collection, name):
     return collection.find_and_modify(query={'_id': name}, update={'$inc': {'seq': 1}}, new=True).get('seq')
@@ -343,6 +344,7 @@ def trainAI(stri):
     i = 0
 
     maxx = len(words)  # numero parole
+    maxxr=maxx-1;
     story = ""
     idsin = ""
 
@@ -395,7 +397,7 @@ def trainAI(stri):
             story_list = story.split("=")
             story_list = [float(y) for y in story_list]
             # media armonica
-            hm = harmonic_mean(story_list)
+           # hm = harmonic_mean(story_list)
             # calcolo la somma assoluta
             sax = nsax(story_list, 0)
 
@@ -407,10 +409,10 @@ def trainAI(stri):
             if findS(story) == 0:
                 if liv == 1:
                     idsin = collectiont.insert(
-                        {"liv": liv, "start": 1, "story": story, "next": "", "hm": hm, "sax": sax, "weight": 0})
+                        {"liv": liv, "start": 1, "story": story, "next": "", "sax": sax, "weight": 0})
                 else:
                     idsin = collectiont.insert(
-                        {"liv": liv, "start": 0, "story": story, "next": "", "hm": hm, "sax": sax, "weight": 0})
+                        {"liv": liv, "start": 0, "story": story, "next": "", "sax": sax, "weight": 0})
             else:
                 idsin = findS(story)
                 collectiont.update_one(
@@ -646,7 +648,7 @@ def interact(stri):
     next = 0
     str1 = []
     aws = []
-    stop = 1
+    stop = 0
     row = []
     i = 0
     i2 = 0
@@ -687,7 +689,7 @@ def interact(stri):
     ls2 = len(str2)
 
     if rc == 0:
-        stop = 2
+        stop = 0
     # non va x me
 
         # pprint("stoppo con array "+str(str1))
@@ -709,11 +711,12 @@ def interact(stri):
 
             if rc != 0:
                 i2 = -1
-                stop = 1
+                stop = 2
             elif ls2 == 0:
                 next = ""
 
                 #pprint("Loop, stop:" + str(stop))
+
         if stop == 1:
             if deb == 1:    
                 pprint("ciclo armonico")
@@ -757,14 +760,13 @@ def interact(stri):
                     pprint("RIGHE RISULTATO"+str(rows.count()))
                 row = rows[0]
                 next = row['next']
-                if hm != 0:
-                    story = row['story']
-                    s2 = story.split("=")
-
-                    for s in s2:
-                        s = int(s)
-                        w1,s1,e =findWById(s)
-                        aws.append(w1)
+                #if hm != 0:
+                story = row['story']
+                s2 = story.split("=")
+                for s in s2:
+                    s = int(s)
+                    w1,s1,e =findWById(s)
+                    aws.append(w1)
                 w2,s1,e=findWById(next)
                 aws.append(w2)
 
@@ -844,29 +846,39 @@ def grouper(n, iterable, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
     # grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
     args = [iter(iterable)] * n
-    return zip_longest(fillvalue=fillvalue, *args)
+    return izip_longest(fillvalue=fillvalue, *args)
 
 
-def splitBig(name, maxFile):
-    rangeC = 1
-    rangeC = rawbigcount(name)
-    # sempre numero intero
-    while rangeC % maxFile == 0:
-        rangeC = rangeC + 1
-
-    n = (rangeC / maxFile)
-
-    with open(name) as f:
-        for i, g in enumerate(grouper(n, f, fillvalue=''), 1):
-            with open('./train/small_file_{0}'.format(i), 'w') as fout:
-                fout.writelines(g)
+def splitBig(maxFile):
+    import os
+    for file in os.listdir("./train/file"):
+        if file.endswith(".txt"):
+            path=os.path.join("./train/file", file)
+            pprint(path)
+            rangeC = 1
+            rangeC = rawbigcount(path)
+            # sempre numero intero
+            while rangeC % maxFile == 0:
+                rangeC = rangeC + 1
+            
+            n = (rangeC / maxFile)
+        
+            with open(path) as f:
+                for i, g in enumerate(grouper(n, f, fillvalue=''), 0):
+                    with open('./train/new/small_file_{0}.txt'.format(i), 'w') as fout:
+                        fout.writelines(g)
 
 
 def train(index):
     pprint("ok")
     # cerco se ci sono dei progressi
-    progFile = "./train/progress{0}.txt".format(index)
-    trainFile = "./train/small_file_{0}".format(index)
+    #
+    progFile = "./train/new/progress{0}.txt".format(index)
+    trainFileDone = "./train/done/small_file_{0}.txt".format(index)
+    trainFile = "./train/new/small_file_{0}.txt".format(index)
+
+    #pprint("current file: "+trainFile)
+
     if os.path.exists(progFile):
         f = open(progFile, "r")
         ind = f.read().strip()
@@ -882,24 +894,42 @@ def train(index):
     else:
         i = 0
 
-    rangeC = rawbigcount(trainFile)
+    
 
     files = io.open(trainFile, "r", encoding="utf8")
+    files= files.read().replace("\n"," ").replace( "\r"," ")
+    remove = string.punctuation
+    remove = remove.replace("-", "")
+    remove = remove.replace(",", "")
+    remove = remove.replace("%", "")
+    remove = remove.replace("&", "")
+    remove = remove.replace("#", "")
+    remove = remove.replace("/", "")
+    remove = remove.replace(":", "")
+    remove = remove.replace("-", "")
+    remove = remove.replace("'", "")
+
+    file=re.split('['+remove+']', files)
+     # don't remove hyphens
+    rangeC = len(file)
     str1 = ""
-    str2 = ""
+
 
     filex = open(progFile, "w")
-
+    os.rename(trainFile, trainFileDone)
     non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
+
     # progressbar usage
-    for line in files:
+    for line in file:
         line = line.replace("\n", "")
+        '''
         if i % 2 == 0:
             str1 = line.translate(non_bmp_map)
         else:
             str2 = line.translate(non_bmp_map)
-
-        trainAI(str1 + " " + str2)
+        '''
+        str1 = line.translate(non_bmp_map)
+        trainAI(str1)
         filex.seek(0)
         filex.truncate()
         filex.write(str(i))
@@ -964,9 +994,9 @@ def getInput():
         text = raw_input("Please enter something: ")
         s = interact(text)
         print(s)
+import multiprocessing
+maxProcess =multiprocessing.cpu_count() 
 
-maxProcess = 2
-#splitBig('./train/train.txt', 2)
 # multiprocessing trainig
 
 
@@ -982,27 +1012,40 @@ def conn():
 
 
 def f(i):
+    my_i = []
+    splitBig(maxProcess)
 
-    train(i)
+    for count in range (0,maxProcess):
+        my_i.append(count)
+
+    # make the Pool of workers
+    pool = ThreadPool(maxProcess) 
+    results = pool.map(train, my_i)
+    print results
+
+    pool.close() 
+    pool.join() 
 
 
 def main(argv):
+    pprint(str(argv))
     try:
-        opts, args = getopt.getopt(argv, "hti:", ["ifile="])
+        opts = argv
     except getopt.GetoptError:
         print 'test.py -t <numero file train>'
         sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print 'test.py -t <numero file train>'
-            sys.exit()
-        elif opt in ("-t", "--ifile"):
-            f(int(arg))
-        elif opt in ("-i", "--ofile"):
-            getInput()
+  
+    if opts[0] == '-h':
+        print 'test.py -t <numero file train>'
+        sys.exit()
+    elif opts[0] =='-t':
+        pprint(opts[1])
+        f(int(opts[1]))
+    elif opts[0] =='-i':
+        getInput()
 
-    print 'Input file is "', inputfile
-    print 'Output file is "', outputfile
+
+
 
 
 if __name__ == '__main__':
