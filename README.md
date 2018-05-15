@@ -1,4 +1,4 @@
-# This is my first repo's readme file
+# DAT V2 IA RESEARCH
 ## Postgres installation
 
 /usr/lib/postgresql/10/bin/pg_ctl -D /var/lib/postgresql/10/main -l logfile restart
