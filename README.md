@@ -48,8 +48,11 @@ CREATE TABLE DNA(
 
 ## How To Query
 
+```SQL
 INSERT INTO films VALUES
     ('UA502', 'Bananas', 105, '1971-07-13', 'Comedy', '82 minutes');
 
 UPDATE employees SET sales_count = sales_count + 1 WHERE id =
   (SELECT sales_person FROM accounts WHERE name = 'Acme Corporation');
+  
+```
