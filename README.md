@@ -1,5 +1,5 @@
 # This is my first repo's readme file
-# postgres installation
+## postgres installation
 /usr/lib/postgresql/10/bin/pg_ctl -D /var/lib/postgresql/10/main -l logfile restart
 
 psql
