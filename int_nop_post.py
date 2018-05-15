@@ -16,7 +16,15 @@ from collections import defaultdict
 from math_mean import harmonic_mean, percentage,F
 from itertools import takewhile, repeat, izip_longest
 from multiprocessing.dummy import Pool as ThreadPool 
+import psycopg2
 
+try:
+    conn = psycopg2.connect("dbname='datdb' user='nuked' host='localhost' password=''")
+except:
+    print "I am unable to connect to the database"
+
+
+cur = conn.cursor()
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -1012,7 +1020,6 @@ def conn():
 
 
 def f(i):
-  
     my_i = []
     splitBig(maxProcess)
 
