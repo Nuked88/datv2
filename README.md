@@ -9,7 +9,7 @@ CREATE DATABASE <username> OWNER <username>;
 
 
 ## Create schema
-
+```SQL
 CREATE TABLE words(
    _id INT PRIMARY KEY     NOT NULL,
    start           INT    NOT NULL DEFAULT 0,
@@ -41,7 +41,7 @@ CREATE TABLE DNA(
    date           DATE    NOT NULL,
    dna            CHAR(16),
 );
-
+```
 
 
 ## How To Query
