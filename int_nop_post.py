@@ -19,7 +19,8 @@ from multiprocessing.dummy import Pool as ThreadPool
 import psycopg2
 
 try:
-    conn = psycopg2.connect("dbname='datdb' user='nuked' host='localhost' password=''")
+    conn = psycopg2.connect("dbname='datdb' user='nuked' host='localhost' password='test'")
+    conn.autocommit = True
 except:
     print "I am unable to connect to the database"
 
@@ -51,7 +52,20 @@ def findW(word):
 
     if deb == 1:
         pprint("FindW")
-    rows = collectionw.find({"word": word}).limit(1)
+    
+    res = cur.execute("SELECT _id FROM words WHERE word='"+word+"'") #collectionw.find({"word": word}).limit(1)
+    
+    if(res!=None):
+        pprint(res)
+    #print("The number of parts: ", cur.rowcount)
+        row = cur.fetchone()
+        a=row['_id']
+    else:
+        a=0
+    '''    while row is not None:
+            print(row)
+            row = cur.fetchone()
+    
     ind = 0
     for row in rows:
         ind += 1
@@ -61,6 +75,7 @@ def findW(word):
         a = ind
     else:
         a = id
+    '''
 #    dd  pprint(a)
     return a
 
@@ -69,16 +84,14 @@ def findL(storyS):
 
     if deb == 1:
         pprint("FindL")
-    rows = collectionl.find({"story": storyS}).limit(1)
-    ind = 0
-    for row in rows:
-        ind += 1
-        id = row["_id"]
+    res = cur.execute("SELECT _id FROM logic WHERE story='"+storyS+"'") #collectionw.find({"word": word}).limit(1)
 
-    if ind == 0:
-        a = ind
+    if(res!=None):
+    #print("The number of parts: ", cur.rowcount)
+        row = cur.fetchone()
+        a=row['_id']
     else:
-        a = id
+        a=0
 #    dd  pprint(a)
     return a
 
@@ -86,18 +99,14 @@ def findL(storyS):
 def findGen(name):
     if deb == 1:
         pprint("Find"+str(name))
-    rows = collectionm.find({name:{ '$exists': 'dna' }}).limit(1)
-    ind = 0
-    for row in rows:
-        ind += 1
-        id = row[name]
+    res = cur.execute("SELECT dna FROM DNA WHERE dna='"+name+"'") #collectionw.find({"word": word}).limit(1)
 
-
-
-    if ind == 0:
-        a = ind
+    if(res!=None):
+    #print("The number of parts: ", cur.rowcount)
+        row = cur.fetchone()
+        a=row['dna']
     else:
-        a = id
+        a=0
 #    dd  pprint(a)
     return a
 
@@ -108,22 +117,29 @@ def findWById(_id):
     if deb == 1:
         pprint("FindWById"+str(_id))
     wor = ""
-    rows = collectionw.find({"_id": _id}).limit(1)
+ 
+    res = cur.execute("SELECT word,start,endcounter FROM words WHERE _id='"+_id+"'") #collectionw.find({"_id": _id}).limit(1)
 
-    for row in rows:
-
+    if(res!=None):
+    #print("The number of parts: ", cur.rowcount)
+        row = cur.fetchone()
         wor = row["word"]
         s= row["start"]
         e=row["end"]
+
+
+     
     return wor,s,e
 
 def findWByIdFull(_id):
 
     wor = ""
-    rows = collectionw.find({"_id": _id})
+    res = cur.execute("SELECT * FROM words WHERE _id='"+_id+"'") #collectionw.find({"_id": _id}).limit(1)
 
-    for row in rows:
-        wor = row
+    if(res!=None):
+    #print("The number of parts: ", cur.rowcount)
+        wor = cur.fetchone()
+        
     return wor
 
 # check if sin already exist
@@ -133,20 +149,19 @@ def findS(story):
 
     if deb == 1:
         pprint("FindS")
-    rows = collectiont.find({"story": story}).limit(1)
-    ind = 0
-    for row in rows:
-        ind += 1
-        id = row["_id"]
+    res = cur.execute("SELECT _id FROM lmemo WHERE story='"+story+"'") #collectionw.find({"word": word}).limit(1)
 
-    if ind == 0:
-        a = ind
+    if(res!=None):
+    #print("The number of parts: ", cur.rowcount)
+        row = cur.fetchone()
+        a=row['_id']
     else:
-        a = id
+        a=0
 #      pprint(a)
     return a
 
-
+'''
+#riguarda media armonica disattivata il 13/05/18
 def findH2(story_list, hm, liv):
     if deb == 1:
         pprint("FindH2"+str(story_list))
@@ -160,7 +175,7 @@ def findH2(story_list, hm, liv):
         {"hm": {"$gt": sens[0], "$lt": sens[1]}, "liv": liv})
 
     return rows
-
+'''
 
 def checkVoid(stringa):
     if deb == 1:
@@ -189,79 +204,97 @@ def findH(story_list, story, sax, liv):
     # simili (parametro necessario per ricerca tramine media armonica)
 
     # cerco nel db sinapspi con sensibilità compresa tra i due valori
-    rows = collectiont.find(
-        {"sax": {"$eq": sax}, "liv": liv, "story": {"$ne": story}})
-    story_list1 = story.split("=")  # array story corrente
-    wat1 = findD(story_list1)
-    nstory1 = csax(story_list1)
+    #rows = collectiont.find(
+    #    {"sax": {"$eq": sax}, "liv": liv, "story": {"$ne": story}})
 
-    for r in rows:
-        story_list2 = r['story'].split("=")  # array story restituito
+    res = cur.execute("SELECT story FROM lmemo WHERE liv='"+str(liv)+"' AND story !='"+story+"'") #collectionw.find({"word": word}).limit(1)
 
-        # verifica validità risultati comparando csax array
-        nstory2 = csax(story_list2)
-        if nstory1 == nstory2:
-            wat2 = findD(story_list2)
-            comp = compareA(wat1, wat2)
-            for c in comp:
-                b = wat1[c]
-                # creazione regola in base al parametro variabile
-              #  pprint("ilparametro che varia e' " +
-              #         str(comp[0]) + " presente nelle posizioni " + str(b))
-            # il che significa che la regola deve dichiarare che per ogni sinapsi uguale a quella della regola e che ha nelle posizioni 2 e 4 un parametro uguale
-            # dat deve sostituire alla posizione 4 il parametro 2 anche se non è presente una sinapsi per quello
-            # sostituiamo il parametro alle coordinate ultime dell'array con XX
-                nstory = []
-                for w in story_list1:
-                    if w == str(comp[0]):
-                        a = "XX"
-                        nstory.append(a)
+    if(res!=None):
+    #print("The number of parts: ", cur.rowcount)
+        row = cur.fetchall()
+
+        story_list1 = story.split("=")  # array story corrente
+        wat1 = findD(story_list1)
+        nstory1 = csax(story_list1)
+    
+        for r in rows:
+            story_list2 = r['story'].split("=")  # array story restituito
+    
+            # verifica validità risultati comparando csax array
+            nstory2 = csax(story_list2)
+            if nstory1 == nstory2:
+                wat2 = findD(story_list2)
+                comp = compareA(wat1, wat2)
+                for c in comp:
+                    b = wat1[c]
+                    # creazione regola in base al parametro variabile
+                  #  pprint("ilparametro che varia e' " +
+                  #         str(comp[0]) + " presente nelle posizioni " + str(b))
+                # il che significa che la regola deve dichiarare che per ogni sinapsi uguale a quella della regola e che ha nelle posizioni 2 e 4 un parametro uguale
+                # dat deve sostituire alla posizione 4 il parametro 2 anche se non è presente una sinapsi per quello
+                # sostituiamo il parametro alle coordinate ultime dell'array con XX
+                    nstory = []
+                    for w in story_list1:
+                        if w == str(comp[0]):
+                            a = "XX"
+                            nstory.append(a)
+                        else:
+                            nstory.append(w)
+                    # back to string
+                    nstoryS = ''.join("=".join(str(x) for x in nstory))
+    
+                # se non esiste già la logica
+                fatt1 = findL(nstoryS)
+                fatt2 = checkVoid(nstoryS)
+                if fatt1 == 0 and fatt2 == 0:
+                    pprint(nstoryS)
+                    if liv == 1:
+                        
+                        cur.execute("INSERT INTO logic (liv,story,wtd,sax,start) VALUES ('"+liv+"','"+nstoryS+"', '"+b+"', '"+sax+"', 1)") 
+
+                        #idsinL = collectionl.insert(
+                        #    {"liv": liv, "story": nstoryS, "wtd": b, "sax": sax, "weight": 0, "start": 1})
                     else:
-                        nstory.append(w)
-                # back to string
-                nstoryS = ''.join("=".join(str(x) for x in nstory))
 
-            # se non esiste già la logica
-            fatt1 = findL(nstoryS)
-            fatt2 = checkVoid(nstoryS)
-            if fatt1 == 0 and fatt2 == 0:
-                pprint(nstoryS)
-                if liv == 1:
-                    idsinL = collectionl.insert(
-                        {"liv": liv, "story": nstoryS, "wtd": b, "sax": sax, "weight": 0, "start": 1})
+                        cur.execute("INSERT INTO logic (liv,story,wtd,sax,start) VALUES ('"+liv+"','"+nstoryS+"', '"+b+"', '"+sax+"', 0)") 
+                        #idsinL = collectionl.insert(
+                        #    {"liv": liv, "story": nstoryS, "wtd": b, "sax": sax, "weight": 0, "start": 0})
+    
                 else:
-                    idsinL = collectionl.insert(
-                        {"liv": liv, "story": nstoryS, "wtd": b, "sax": sax, "weight": 0, "start": 0})
-
-            else:
-
-                collectionl.update_one(
-                    {"_id": fatt1},
-                    {
-                        "$inc": {
-                            "weight": 1
-                        }
-                    }
-                )
-                if liv == 1:
+    
+                    cur.execute("UPDATE logic SET weight = weight + 1 WHERE _id = '"+fatt1+"'") 
+                    '''
                     collectionl.update_one(
                         {"_id": fatt1},
                         {
                             "$inc": {
-                                "start": 1
+                                "weight": 1
                             }
                         }
                     )
-                pprint(str(nstoryS) + " NON INSERITO GIA PRESENTE:" +
-                       str(fatt1) + " INUTILE:" + str(fatt2))
-
-            # pprint("wat1"+str(wat1))
-            # pprint("wat2"+str(wat2))
-            # for index,w in wat1.items():
-            #    pprint(w)
-     # pprint(hm)
-        else:
-            pass
+                    '''
+                    if liv == 1:
+                        cur.execute("UPDATE logic SET start = start + 1 WHERE _id = '"+fatt1+"'") 
+                        '''
+                        collectionl.update_one(
+                            {"_id": fatt1},
+                            {
+                                "$inc": {
+                                    "start": 1
+                                }
+                            }
+                        )
+                        '''
+                    pprint(str(nstoryS) + " NON INSERITO GIA PRESENTE:" +
+                           str(fatt1) + " INUTILE:" + str(fatt2))
+    
+                # pprint("wat1"+str(wat1))
+                # pprint("wat2"+str(wat2))
+                # for index,w in wat1.items():
+                #    pprint(w)
+         # pprint(hm)
+            else:
+                pass
 
 
 # trova duplicati nella lista con posizione
@@ -282,7 +315,9 @@ def compareA(mylist1, mylist2):
 
 
 def upcolNext(idsin, idn):
-
+    if idsin!="":
+        cur.execute("UPDATE lmemo SET next = "+str(idn)+" WHERE _id = '"+str(idsin)+"'")  #probabile anomalia?!?!?
+    '''
     collectiont.update_one(
         {"_id": idsin},
         {
@@ -291,6 +326,7 @@ def upcolNext(idsin, idn):
             }
         }
     )
+    '''
 
 
 def csax(data):
@@ -362,13 +398,18 @@ def trainAI(stri):
         if liv == 0:
             if findW(word) == 0:
                     # trovo id associati alle parole altrimenti la inserisco
-                _id = collectionw.insert(
-                    {"_id": getNextSequence(db.counters, "nodeid"), "word": word, "start": 1, "end": 0})
+                cur.execute("INSERT INTO words (word,start,endcounter) VALUES ('"+word+"',1, 0) RETURNING words._id") 
+                _id= cur.fetchone()[0]
                 story = _id
+                #_id = collectionw.insert(
+                #    {"_id": getNextSequence(db.counters, "nodeid"), "word": word, "start": 1, "end": 0})
+                
             else:
                 story = findW(word)
                 # se è la prima parola della frase incremento il valore di
                 # start
+                cur.execute("UPDATE words SET start = start + 1 WHERE _id = '"+story+"'") 
+                '''
                 collectionw.update_one(
                     {"_id": story},
                     {
@@ -377,20 +418,25 @@ def trainAI(stri):
                         }
                     }
                 )
+                '''
         elif liv != 0 and i < maxx:
             if findW(word) == 0:
                 # se è l'ultima parola e non esiste
                 if i == maxxr:
-                    _id = collectionw.insert(
-                        {"_id": getNextSequence(db.counters, "nodeid"), "word": word, "start": 0, "end": 1})
+                    cur.execute("INSERT INTO words (word,start,endcounter) VALUES ('"+word+"',0, 1) RETURNING words._id") 
+                    _id= cur.fetchone()[0]
+                    #_id = collectionw.insert(
+                    #    {"_id": getNextSequence(db.counters, "nodeid"), "word": word, "start": 0, "end": 1})
                 else:
-                    _id = collectionw.insert(
-                        {"_id": getNextSequence(db.counters, "nodeid"), "word": word, "start": 0, "end": 0})
+                    cur.execute("INSERT INTO words (word,start,endcounter) VALUES ('"+word+"',0, 0) RETURNING words._id") 
+                    _id= cur.fetchone()[0]
 
             else:
                 # se è l'ultima parola ed esiste
                 _id = findW(word)
                 if i == maxxr:
+                    cur.execute("UPDATE words SET endcounter = endcounter + 1 WHERE _id = '"+_id+"'") 
+                    '''
                     collectionw.update_one(
                         {"_id": _id},
                         {
@@ -399,6 +445,7 @@ def trainAI(stri):
                             }
                         }
                     )
+                    '''
 
             story = str(story) + "=" + str(_id)
             # da stringa a lista
@@ -416,13 +463,20 @@ def trainAI(stri):
             # inserisco nuovo sin se non esite 13/05/2018 rimosso hm
             if findS(story) == 0:
                 if liv == 1:
-                    idsin = collectiont.insert(
-                        {"liv": liv, "start": 1, "story": story, "next": "", "sax": sax, "weight": 0})
+                    #id_of_new_row = cur.fetchone()[0]
+                    cur.execute("INSERT INTO lmemo (liv,start,story,sax) VALUES ('"+str(liv)+"',1, '"+story+"', '"+str(sax)+"' ) RETURNING lmemo._id") 
+                    idsin = cur.fetchone()[0]
+                    #idsin = collectiont.insert(
+                    #    {"liv": liv, "start": 1, "story": story, "next": "", "sax": sax, "weight": 0})
                 else:
-                    idsin = collectiont.insert(
-                        {"liv": liv, "start": 0, "story": story, "next": "", "sax": sax, "weight": 0})
+                    cur.execute("INSERT INTO lmemo (liv,start,story,sax) VALUES ('"+str(liv)+"',1, '"+story+"', '"+str(sax)+"' ) RETURNING lmemo._id") 
+                    idsin = cur.fetchone()[0]
+                    #idsin = collectiont.insert(
+                    #    {"liv": liv, "start": 0, "story": story, "next": "", "sax": sax, "weight": 0})
             else:
                 idsin = findS(story)
+                cur.execute("UPDATE lmemo SET weight = weight + 1 WHERE _id = '"+str(idsin)+"'") 
+                '''
                 collectiont.update_one(
                     {"_id": idsin},
                     {
@@ -431,7 +485,10 @@ def trainAI(stri):
                         }
                     }
                 )
+                '''
                 if liv == 1:
+                    cur.execute("UPDATE lmemo SET start = start + 1 WHERE _id = '"+str(idsin)+"'")
+                    '''
                     collectiont.update_one(
                         {"_id": idsin},
                         {
@@ -440,6 +497,7 @@ def trainAI(stri):
                             }
                         }
                     )
+                    '''
 
             findH(story_list, story, sax, liv)
             #             print("esiste")
@@ -490,163 +548,7 @@ def bringLevelDown(data, liv):
 def shortMemory(now):
     return 0
 
-'''
-def interact(stri):
-    stri = stri.decode()
 
-    # split speak
-    maxEndR=collectionw.find().sort('end',-1).limit(1)
-    maxEnd=maxEndR[0]["end"]
-   
-    next = 0
-    str1 = []
-    aws = []
-    stop = 2
-    row = []
-    i = 0
-    i2 = 0
-    hm = 0
-    s1=0
-    e=0
-    words = stri.split()
-
-    # liv = len(words)
-    for word in words:
-        liv = i
-        if findW(word) == 0:
-                    # trovo id associati alle parole se non c'è la inserisco
-            collectionw.insert(
-                {"_id": getNextSequence(db.counters, "nodeid"), "word": word, "start": 0, "end": 0})
-        str1.append(str(findW(word)).strip())
-        i = + 1
-
-    str2 = list(str1)
-
-    story = ''.join("=".join(str(x) for x in str1))
-    rex = "^(" + story + ").*"
-    rows = collectiont.find({"story": {'$regex': rex}})
-    # pprint(str1)
-    vartemp = story
-    # se non ci sono risultati diminuisco di uno l'array
-    pprint(rows.count())
-    # row count
-    rc = rows.count()
-    # len str2
-    ls2 = len(str2)
-
-    if rc == 0:
-        stop = 0
-    # non va x me
-    while stop == 0:
-        pprint("CICLO 0: BASE")
-        str2.pop(-1)
-        ls2 = ls2 - 1
-        story = ''.join("=".join(str(x) for x in str2))
-        if rc != 0 or ls2 == 0:
-            # se non c'è nemmeno un collegamento vado di regola... non so se
-            # fare il contrario
-
-            stop = 1
-
-            pprint("SKIP: stoppo con array "+str(str1))
-
-    while(next != ""):
-
-        pprint("Loop, stop:" + str(stop))
-        if stop == 1:
-            pprint("CICLO 1: Armonico")
-            # cerco quindi in Logic una regola tipo 1=2=0 con campo wtd (what to do) che deve essere tipo [1,4] e vuol dire che quello che è nella pos 1 della
-            # mia story lo metto anche nella posizione 4 della story finale
-            # scritta nel campo fstory della regola
-            try:
-                aws = rrule(vartemp)
-                pprint(len(aws))
-                # no rule
-                if len(aws) == 0:
-                    pprint("IF")
-                    # nessun risultato
-                    # provo con la media armonica
-                    #pprint("LISTA: "+str1)
-                    story_list = [float(y) for y in str1]
-                    
-                    # media armonica
-                    hm = harmonic_mean(story_list)
-                    rows = findH2(story_list, hm, liv)
-                    # pprint(liv)
-                    # se cmq è ancora a 0
-                    if rows.count() == 0:
-                        pprint("NON PASSO A CICLO2")
-                        next = ""
-                    else:
-                        pprint("PASSO A CICLO2")
-                        i2 = -1
-                        stop = 2 
-                else:
-                    pprint("NON 0")
-            except:
-                print("Unexpected error:", sys.exc_info()[0])
-                pass
-
-
-        elif stop == 2:
-            # test: inizio con il primo e basta.
-            pprint("CICLO 2:" + str(i2))
-            if i2 == 0:
-                row = rows[0]
-                next = row['next']
-                if hm != 0:
-                    story = row['story']
-                    s2 = story.split("=")
-
-                    for s in s2:
-                        s = int(s)
-                        aws.append(findWById(s))
-
-                aws.append(findWById(next))
-
-            else:
-                for row in rows:
-                    next = row['next']
-                    aws.append(findWById(next))
-
-            # aggiorno la story per cercare il prossimo next
-
-            story = story + '=' + str(next)
-            rows = collectiont.find({"story": story})
-            pprint("STORY: " + story)
-            pprint("ARRAY: " + str(aws))
-            #nn=row['next']
-            #cerco il valore END dell'ultima parola della risposta creata
-            wn=findWByIdFull(next)
-            #end
-            
-            if wn!='':
-                end=wn['end']
-            #use fibonacci for calulate end value
-            if i2>0:
-                endMax=maxEnd/F(i2)
-            else:
-                endMax=999999
-
-            pprint(str(endMax))
-            if rows.count() == 0:
-                next = ""
-            
-            pprint("ME: "+str(endMax)+" END "+str(end))
-            if row['next'] == "" or end>endMax:
-                next = ""
-                # next = ""
-             #   pprint("nores")
-
-
-
-            #next = ""
-            # fermo il ciclo
-
-        i2 = i2 + 1
-        answer = ' '.join(aws)
-    return answer*/
-'''
 def interact(stri):
     stri = stri.decode()
 
@@ -670,9 +572,8 @@ def interact(stri):
         liv = i
         if findW(word) == 0:
             # trovo id associati alle parole se non c'è la inserisco
-            collectionw.insert(
-                {"_id": getNextSequence(db.counters, "nodeid"), "word": word, "start": 0, "end": 0})
-        str1.append(str(findW(word)).strip())
+            cur.execute("INSERT INTO words (word,start,endcounter) VALUES ('"+word+"',0, 0)") 
+            str1.append(str(findW(word)).strip())
         i = + 1
 
     str2 = list(str1)
@@ -684,6 +585,8 @@ def interact(stri):
     rex = "^(" + story + ").*"
     if deb == 1:    
         pprint (rex)
+
+
 
     rows = collectiont.find({"story": {'$regex': rex}})
     # pprint(str1)
@@ -724,7 +627,8 @@ def interact(stri):
                 next = ""
 
                 #pprint("Loop, stop:" + str(stop))
-
+        '''
+        #media armonica disattivata il 13/05/2018
         if stop == 1:
             if deb == 1:    
                 pprint("ciclo armonico")
@@ -753,6 +657,7 @@ def interact(stri):
             except:
                 stop = 2
                 pass
+        '''
         if stop == 2:
             if deb == 1:    
                 pprint("costruttore next")
@@ -905,7 +810,7 @@ def train(index):
     
 
     files = io.open(trainFile, "r", encoding="utf8")
-    files= files.read().replace("\n"," ").replace( "\r"," ")
+    files= files.read().replace("\n"," ").replace( "\r"," ").replace( "'","''")
     remove = string.punctuation
     remove = remove.replace("-", "")
     remove = remove.replace(",", "")
@@ -924,7 +829,7 @@ def train(index):
 
 
     filex = open(progFile, "w")
-    os.rename(trainFile, trainFileDone)
+    #os.rename(trainFile, trainFileDone)
     non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
 
     # progressbar usage
@@ -945,7 +850,8 @@ def train(index):
         sys.stdout.flush()
 
         i += 1
-
+'''
+#media end e start parole
 def averEnd():
     avg=collectionw.aggregate([{ "$match": {"end": { "$gt": 0 }}},{ "$group": { "_id": 'null',"end": { "$avg": "$end" },"start": { "$avg": "$start" }}}])
     ind=0
@@ -955,7 +861,7 @@ def averEnd():
         aaa.append(row["start"])
         aaa.append(row["end"])
     return aaa
-
+'''
 # Return CPU temperature as a character string      
 
 
@@ -993,8 +899,8 @@ def getInput():
     #load?
     aver=averEnd()
     im=humor()
-    pprint("Averange Start: "+str(aver[0]));
-    pprint("Averange End: "+str(aver[1]));
+    #pprint("Averange Start: "+str(aver[0]));
+    #pprint("Averange End: "+str(aver[1]));
     pprint("Busy: "+str(im[0]));
     pprint("DNA: "+str(dna()));
  #   pprint("Temperature: "+str(im[1]));
@@ -1021,6 +927,8 @@ def conn():
 
 def f(i):
     my_i = []
+    train(1)
+    '''
     splitBig(maxProcess)
 
     for count in range (0,maxProcess):
@@ -1033,7 +941,7 @@ def f(i):
 
     pool.close() 
     pool.join() 
-
+    '''
 
 def main(argv):
     pprint(str(argv))

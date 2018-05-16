@@ -15,7 +15,7 @@ CREATE DATABASE <username> OWNER <username>;
 CREATE TABLE words(
    _id INT PRIMARY KEY     NOT NULL,
    start           INT    NOT NULL DEFAULT 0,
-   end            INT     NOT NULL DEFAULT 0,
+   endcounter            INT     NOT NULL DEFAULT 0,
    word        	TEXT
 );
 
@@ -23,17 +23,17 @@ CREATE TABLE logic(
    _id INT PRIMARY KEY     NOT NULL,
    story           TEXT    NOT NULL,
    next            INT     NOT NULL DEFAULT 0,
-   weight 			INT 	NOT NULL,
+   weight 			INT 	NOT NULL DEFAULT 0,
    liv int,
    sax int
-);
+); 
 
 CREATE TABLE lmemo(
    _id INT PRIMARY KEY     NOT NULL,
    start           INT    NOT NULL DEFAULT 0,
    story           TEXT    NOT NULL,
    next            INT     NOT NULL DEFAULT 0,
-   weight 			INT 	NOT NULL,
+   weight 			INT 	NOT NULL DEFAULT 0,
    liv int,
    sax int
 );

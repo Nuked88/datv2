@@ -220,10 +220,10 @@ def findH(story_list, story, sax, liv):
                 pprint(nstoryS)
                 if liv == 1:
                     idsinL = collectionl.insert(
-                        {"liv": liv, "story": nstoryS, "wtd": b, "sax": sax, "weight": 0, "start": 1})
+                        {"liv": liv, "story": nstoryS, "wtd": b, "sax": sax, "weight": 0})
                 else:
                     idsinL = collectionl.insert(
-                        {"liv": liv, "story": nstoryS, "wtd": b, "sax": sax, "weight": 0, "start": 0})
+                        {"liv": liv, "story": nstoryS, "wtd": b, "sax": sax, "weight": 0})
 
             else:
 
@@ -235,6 +235,7 @@ def findH(story_list, story, sax, liv):
                         }
                     }
                 )
+                '''
                 if liv == 1:
                     collectionl.update_one(
                         {"_id": fatt1},
@@ -244,6 +245,7 @@ def findH(story_list, story, sax, liv):
                             }
                         }
                     )
+                '''
                 pprint(str(nstoryS) + " NON INSERITO GIA PRESENTE:" +
                        str(fatt1) + " INUTILE:" + str(fatt2))
 
@@ -395,7 +397,7 @@ def trainAI(stri):
             story = str(story) + "=" + str(_id)
             # da stringa a lista
             story_list = story.split("=")
-            story_list = [float(y) for y in story_list]
+            story_list = [y for y in story_list]
             # media armonica
            # hm = harmonic_mean(story_list)
             # calcolo la somma assoluta
@@ -407,12 +409,9 @@ def trainAI(stri):
 
             # inserisco nuovo sin se non esite 13/05/2018 rimosso hm
             if findS(story) == 0:
-                if liv == 1:
-                    idsin = collectiont.insert(
-                        {"liv": liv, "start": 1, "story": story, "next": "", "sax": sax, "weight": 0})
-                else:
-                    idsin = collectiont.insert(
-                        {"liv": liv, "start": 0, "story": story, "next": "", "sax": sax, "weight": 0})
+            	idsin = collectiont.insert(
+                        {"liv": liv, "story": story, "next": "", "sax": sax, "weight": 0})
+               
             else:
                 idsin = findS(story)
                 collectiont.update_one(
@@ -916,7 +915,7 @@ def train(index):
 
 
     filex = open(progFile, "w")
-    os.rename(trainFile, trainFileDone)
+    #os.rename(trainFile, trainFileDone)
     non_bmp_map = dict.fromkeys(range(0x10000, sys.maxunicode + 1), 0xfffd)
 
     # progressbar usage
@@ -1012,7 +1011,8 @@ def conn():
 
 
 def f(i):
-  
+    train(1)
+    '''
     my_i = []
     splitBig(maxProcess)
 
@@ -1026,7 +1026,7 @@ def f(i):
 
     pool.close() 
     pool.join() 
-
+    '''
 
 def main(argv):
     pprint(str(argv))
